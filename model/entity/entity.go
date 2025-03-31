@@ -1,5 +1,7 @@
 package entity
 
+import "time"
+
 type User struct {
 	ID       uint   `gorm:"primaryKey;unique;autoIncrement"`
 	Username string `gorm:"size:64"`
@@ -7,9 +9,11 @@ type User struct {
 	Password string
 }
 
-type FileMetadata struct {
-	Name      string `json:"name"`
-	Size      int64  `json:"size"`
-	URL       string `json:"url,omitempty"`
-	CreatedAt string `json:"created_at"`
+type Link struct {
+	ID        uint   `gorm:"primaryKey"`
+	URL       string `gorm:"unique"`
+	FilePath  string `gorm:"uniqueIndex:idx_file_token"`
+	Token     string `gorm:"uniqueIndex:idx_file_token"`
+	ExpiresAt time.Time
+	CreatedAt time.Time
 }

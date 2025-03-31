@@ -54,7 +54,8 @@ func (a authService) LoginUser(user request.LoginRequest) (response.LoginRespons
 		}
 	}
 	userId := resUser.ID
-	token, err := jwt.Create(userId)
+	username := resUser.Username
+	token, err := jwt.Create(username, userId)
 	if err != nil {
 		return response.LoginResponse{}, err
 	}

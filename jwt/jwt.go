@@ -3,11 +3,13 @@ package jwt
 import (
 	model "file-sharing/model/error"
 	"github.com/golang-jwt/jwt/v5"
+	log "github.com/sirupsen/logrus"
 	"time"
 )
 
 type Claims struct {
-	UserId uint `json:"UserId"`
+	Username string `json:"username"`
+	UserId   uint   `json:"UserId"`
 	jwt.RegisteredClaims
 }
 
@@ -26,7 +28,7 @@ func JwtParse(token string) (string, error) {
 	} else {
 		return "", &model.InvalidJWTToken
 	}
-
+	log.Info("part 1")
 	tokenParse, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -35,6 +37,7 @@ func JwtParse(token string) (string, error) {
 
 		return jwtSecret, nil
 	})
+	log.Info("part 2")
 
 	if err != nil || !tokenParse.Valid {
 		return "", &model.InvalidJWTToken
@@ -44,21 +47,28 @@ func JwtParse(token string) (string, error) {
 	if !ok {
 		return "", &model.InvalidJWTToken
 	}
+	log.Info("part3")
 
 	username, ok := claims["username"].(string)
+	//if username == "" {
+	//	username = "anonymous" // Default value
+	//}
 	if !ok {
+		log.Info("breakpoint")
 		return "", &model.InvalidJWTToken
 	}
+	log.Info("part 4")
 
 	return username, nil
 }
 
-func Create(userId uint) (string, error) {
+func Create(username string, userId uint) (string, error) {
 
 	expireTime := time.Now().Add(6 * time.Hour) // 6 saat
 
 	claims := &Claims{
-		UserId: userId,
+		Username: username,
+		UserId:   userId,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expireTime),
 		},
@@ -70,18 +80,16 @@ func Create(userId uint) (string, error) {
 
 }
 
-//func Verify(token string) (string, error) {
-//
-//	parsedToken := token[len("Bearer "):]
-//
-//	claims, err := jwt.ParseWithClaims(parsedToken, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+//func ValidateToken(token string) (*Claims, error) {
+//	var claim *Claims
+//	tkn, err := jwt.ParseWithClaims(token, claim, func(token *jwt.Token) (interface{}, error) {
 //		return jwtSecret, nil
 //	})
-//
 //	if err != nil {
-//		return "", err
+//		return nil, err
 //	}
-//
-//	return claims.Claims.(*Claims).Username, nil
-//
+//	if claims, ok := tkn.Claims.(*Claims); ok && tkn.Valid {
+//		return claims, nil
+//	}
+//	return nil, &model.InvalidJWTToken
 //}

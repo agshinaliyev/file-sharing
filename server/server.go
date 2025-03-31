@@ -2,11 +2,14 @@ package server
 
 import (
 	"file-sharing/config"
+	"file-sharing/db"
 	"file-sharing/handler"
 	"file-sharing/middleware"
 	"file-sharing/repository"
+	"file-sharing/service"
 	"github.com/gin-gonic/gin"
 	log "github.com/sirupsen/logrus"
+	"time"
 )
 
 func Init() error {
@@ -16,17 +19,25 @@ func Init() error {
 	if err != nil {
 		log.Fatalf("Failed to set trusted proxies %v", err)
 	}
-	minioCfg := config.LoadMinioConfig()
-	minioRepo, err := repository.NewMinioRepository(minioCfg)
+	minioClient, err := config.NewMinIOClient()
 	if err != nil {
-		log.Fatal("MinIO initialization failed:", err)
+		log.Fatal("Failed to initialize MinIO client:", err)
 	}
+	linkRepo := repository.NewLinkRepository(db.GetDb())
 
-	// Add this where you register routes
-	storageHandler := handler.NewStorageHandler(minioRepo)
-	a := r.Group("/api/v1/auth")
-	a.POST("/upload", storageHandler.UploadFile)
+	// Services
+	minioSvc := service.NewMinioService(minioClient, "uploads")
+	sharingSvc := service.NewSharingService(linkRepo, minioSvc)
+
+	// Handlers
+	shareHandler := handler.NewShareHandler(sharingSvc)
 	authHandler := handler.NewAuthHandler()
+	go func() {
+		ticker := time.NewTicker(1 * time.Hour)
+		for range ticker.C {
+			linkRepo.CleanExpired()
+		}
+	}()
 
 	// Auth resource
 	ar := r.Group("/api/v1/auth")
@@ -38,6 +49,17 @@ func Init() error {
 
 		ar.Use(middleware.Log(), middleware.Recover())
 	}
+	// 3. Register Routes (with logging)
+	authGroup := r.Group("/")
+	authGroup.Use(middleware.Log(),
+		middleware.Recover(),
+		middleware.Auth())
+	{
+		authGroup.POST("/upload", handler.UploadHandler(minioClient))
+		authGroup.POST("/share/:path", shareHandler.CreateLink)
+	}
+	r.GET("/share/:path", shareHandler.DownloadShared)
+
 	// Profile resource
 	pr := r.Group("/api/v1/profile")
 	pr.Use(

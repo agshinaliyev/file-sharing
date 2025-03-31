@@ -43,7 +43,10 @@ func GetDb() *gorm.DB { return DB }
 func Migrate() error {
 	log.Println("Migration database started: ", config.Conf.DBHost, config.Conf.Port)
 
-	err := GetDb().AutoMigrate(entity.User{})
+	err := GetDb().AutoMigrate(
+		entity.User{},
+		entity.Link{},
+	)
 
 	if err != nil {
 		return err

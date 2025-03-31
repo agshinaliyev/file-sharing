@@ -12,3 +12,6 @@ type ProfileResponse struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 }
+type FileResponse struct {
+	Message string `json:"message"`
+}

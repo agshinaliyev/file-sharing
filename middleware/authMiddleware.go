@@ -18,7 +18,7 @@ func Auth() gin.HandlerFunc {
 		if err != nil {
 
 			if errors.Is(err, &errModel.InvalidJWTToken) {
-				c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+				c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized1"})
 				c.Abort()
 				return
 			} else if errors.Is(err, &errModel.InvalidJWTToken) {
@@ -37,7 +37,7 @@ func Auth() gin.HandlerFunc {
 
 		}
 
-		c.Set("USER_ID", userId)
+		c.Set("username", userId)
 		c.Next()
 
 	}
