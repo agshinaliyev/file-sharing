@@ -14,6 +14,7 @@ type Claims struct {
 }
 
 var jwtSecret = []byte("1031092qijdljdqkwdhiu2hdq98d9w87d9w8s98798f79f79d8f7g9sd8fg7")
+var JwtShared = []byte("alsgkdalshlshdnvalssadklgh235klh45hkkbe2ebn5nlsjkflsdnlncln2")
 
 func JwtParse(token string) (string, error) {
 
@@ -78,6 +79,16 @@ func Create(username string, userId uint) (string, error) {
 
 	return token.SignedString(jwtSecret)
 
+}
+func SharedToken(object string, expiresIn time.Duration) (string, error) {
+	claims := jwt.MapClaims{
+		"object": object,
+		"exp":    time.Now().Add(expiresIn).Unix(),
+	}
+	log.Info("test")
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	log.Info("token")
+	return token.SignedString(JwtShared)
 }
 
 //func ValidateToken(token string) (*Claims, error) {
